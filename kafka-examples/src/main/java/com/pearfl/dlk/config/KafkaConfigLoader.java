@@ -4,9 +4,11 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.yaml.snakeyaml.Yaml;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Kafka配置加载工具类
@@ -18,72 +20,89 @@ import java.lang.reflect.Field;
  */
 public class KafkaConfigLoader {
 
+    private static final Logger logger = LoggerFactory.getLogger(KafkaConfigLoader.class);
+
+    private static String repeatString(String str, int count) {
+        if (str == null || count <= 0) return "";
+        StringBuilder sb = new StringBuilder(str.length() * count);
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
     public static void main(String[] args) {
         try {
-            // 1. 加载配置文件
             KafkaGlobalConfig globalConfig = loadConfig("kafka-config.yml");
 
-            // 2. 打印全局配置
-            System.out.println("===== GLOBAL CONFIG =====");
-            System.out.println("Version: " + globalConfig.getVersion());
-            System.out.println("Author: " + globalConfig.getAuthor());
-            System.out.println("Description: " + globalConfig.getDescription());
-            System.out.println("Environment: " + globalConfig.getEnv());
-            System.out.println("================================\n");
+            // 全局配置日志输出
+            logger.info("===== GLOBAL CONFIG =====");
+            logger.info("Version: {}", globalConfig.getVersion());
+            logger.info("Author: {}", globalConfig.getAuthor());
+            logger.info("Description: {}", globalConfig.getDescription());
+            logger.info("Environment: {}", globalConfig.getEnv());
+            logger.info("================================\n");
 
-            // 3. 遍历所有集群配置
             for (String clusterId : globalConfig.getServerConfigs().keySet()) {
                 KafkaServerConfig serverConfig = globalConfig.getServerConfig(clusterId);
 
-                // 4. 打印集群基础信息
-                System.out.println("===== CLUSTER CONFIG: " + clusterId + " =====");
-                System.out.println("Cluster ID: " + serverConfig.getClusterId());
+                // 集群配置日志输出
+                logger.info("===== CLUSTER CONFIG: {} =====", clusterId);
+                logger.info("Cluster ID: {}", serverConfig.getClusterId());
 
-                // 5. 打印服务器配置
-                System.out.println("\nSERVER CONFIGURATION:");
+                // 服务器配置日志输出
+                logger.info("\nSERVER CONFIGURATION:");
                 for (Map.Entry<String, Object> entry : serverConfig.getServerConfig().entrySet()) {
-                    System.out.printf("  %-30s = %s%n", entry.getKey(), entry.getValue());
+                    int spaceCount = Math.max(0, 30 - entry.getKey().length());
+                    logger.info("  {}{} = {}",
+                            entry.getKey(),
+                            repeatString(" ", spaceCount),
+                            entry.getValue());
                 }
 
-                // 6. 遍历所有主题配置
-                System.out.println("\nTOPIC CONFIGURATIONS:");
+                // 主题配置日志输出
+                logger.info("\nTOPIC CONFIGURATIONS:");
                 for (String topicName : serverConfig.getTopicConfigs().keySet()) {
                     KafkaTopicConfig topic = serverConfig.getTopicConfig(topicName);
 
-                    // 7. 打印主题基础信息
-                    System.out.println("\n  --- TOPIC: " + topicName + " ---");
-                    System.out.println("  Actual Topic Name: " + topic.getTopicName());
+                    logger.info("\n  --- TOPIC: {} ---", topicName);
+                    logger.info("  Actual Topic Name: {}", topic.getTopicName());
 
-                    // 8. 打印生产者配置
-                    System.out.println("\n  PRODUCER SETTINGS:");
-                    // 使用getProducerProperties()获取Properties，然后遍历
-                    for (Map.Entry<Object, Object> entry : topic.getProducerProperties().entrySet()) {
-                        System.out.printf("    %-30s = %s%n", entry.getKey(), entry.getValue());
-                    }
+                    // 生产者配置
+                    logger.info("\n  PRODUCER SETTINGS:");
+                    topic.getProducerProperties().forEach((key, value) -> {
+                        int keyLength = key.toString().length();
+                        int spaceCount = Math.max(0, 30 - keyLength);
+                        logger.info("    {}{} = {}",
+                                key,
+                                repeatString(" ", spaceCount),
+                                value);
+                    });
 
-                    // 9. 打印消费者配置
-                    System.out.println("\n  CONSUMER SETTINGS:");
-                    // 使用getConsumerProperties()获取Properties，然后遍历
-                    for (Map.Entry<Object, Object> entry : topic.getConsumerProperties().entrySet()) {
-                        System.out.printf("    %-30s = %s%n", entry.getKey(), entry.getValue());
-                    }
+                    // 消费者配置
+                    logger.info("\n  CONSUMER SETTINGS:");
+                    topic.getConsumerProperties().forEach((key, value) -> {
+                        int keyLength = key.toString().length();
+                        int spaceCount = Math.max(0, 30 - keyLength);
+                        logger.info("    {}{} = {}",
+                                key,
+                                repeatString(" ", spaceCount),
+                                value);
+                    });
                 }
-                System.out.println("========================================\n");
+                logger.info("========================================\n");
             }
 
-            // 10. 模拟配置验证错误
-            System.out.println("TESTING INVALID CONFIG HANDLING...");
+            // 错误处理日志输出
+            logger.info("TESTING INVALID CONFIG HANDLING...");
             try {
-                // 触发无效配置异常
                 getKafkaConstant("invalid.config", ProducerConfig.class, "Producer");
             } catch (IllegalArgumentException e) {
-                System.out.println("ERROR HANDLING DEMO:");
-                System.out.println(e.getMessage());
+                logger.error("ERROR HANDLING DEMO:\n{}", e.getMessage());
             }
 
         } catch (Exception e) {
-            System.err.println("FATAL ERROR: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("FATAL ERROR: {}", e.getMessage(), e);
         }
     }
 

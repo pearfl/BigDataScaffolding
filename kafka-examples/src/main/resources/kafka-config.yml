@@ -10,6 +10,10 @@ kafka:                   # Kafka 配置根节点
       sasl.mechanism: GSSAPI
       sasl.kerberos.service.name: kafka
       kerberos.domain.name: hadoop.dlk.hidden.com.cn
+      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      value.serializer: org.apache.kafka.common.serialization.StringSerializer
+      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
     topics:
       scene-topic1:
         producer:
@@ -19,7 +23,7 @@ kafka:                   # Kafka 配置根节点
           linger.ms: 20
           compression.type: lz4
           enable.idempotence: true
-          transaction.timeout: 900000
+          transaction.timeout.ms: 900000
         consumer:
           fetch.min.bytes: 1048576
           max.partition.fetch.bytes: 2097152
@@ -35,7 +39,7 @@ kafka:                   # Kafka 配置根节点
           linger.ms: 20
           compression.type: lz4
           enable.idempotence: true
-          transaction.timeout: 900000
+          transaction.timeout.ms: 900000
         consumer:
           fetch.min.bytes: 1048576
           max.partition.fetch.bytes: 2097152

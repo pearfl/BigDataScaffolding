@@ -44,7 +44,7 @@ public class KafkaConfigLoader {
             logger.info("================================\n");
 
             for (String clusterId : globalConfig.getServerConfigs().keySet()) {
-                KafkaServerConfig serverConfig = globalConfig.getServerConfig(clusterId);
+                KafkaServerConfig serverConfig = globalConfig.getServerConfigById(clusterId);
 
                 // 集群配置日志输出
                 logger.info("===== CLUSTER CONFIG: {} =====", clusterId);
@@ -92,15 +92,6 @@ public class KafkaConfigLoader {
                 }
                 logger.info("========================================\n");
             }
-
-            // 错误处理日志输出
-            logger.info("TESTING INVALID CONFIG HANDLING...");
-            try {
-                getKafkaConstant("invalid.config", ProducerConfig.class, "Producer");
-            } catch (IllegalArgumentException e) {
-                logger.error("ERROR HANDLING DEMO:\n{}", e.getMessage());
-            }
-
         } catch (Exception e) {
             logger.error("FATAL ERROR: {}", e.getMessage(), e);
         }
@@ -194,77 +185,28 @@ public class KafkaConfigLoader {
 
         // 生产者配置验证与加载
         Map<String, Object> producerProps = (Map) topicConfig.get("producer");
-        for (Map.Entry<String, Object> prop : producerProps.entrySet()) {
-            String kafkaKey = getKafkaConstant(
-                    prop.getKey(),
-                    ProducerConfig.class,
-                    "Producer"
-            );
-            topic.addProducerConfig(kafkaKey, prop.getValue());
+        if (producerProps != null) {
+            for (Map.Entry<String, Object> prop : producerProps.entrySet()) {
+                topic.addProducerConfig(prop.getKey(), prop.getValue());
+            }
         }
+
 
         // 消费者配置验证与加载
         Map<String, Object> consumerProps = (Map) topicConfig.get("consumer");
-        for (Map.Entry<String, Object> prop : consumerProps.entrySet()) {
-            String kafkaKey = getKafkaConstant(
-                    prop.getKey(),
-                    ConsumerConfig.class,
-                    "Consumer"
-            );
-            topic.addConsumerConfig(kafkaKey, prop.getValue());
+        if (consumerProps != null) {
+            for (Map.Entry<String, Object> prop : consumerProps.entrySet()) {
+                topic.addConsumerConfig(prop.getKey(), prop.getValue());
+            }
         }
         return topic;
-    }
-
-
-    /**
-     * 通过反射获取Kafka配置常量
-     *
-     * 实现原理：
-     * 1. 将配置键转换为大写并替换特殊字符（如batch.size -> BATCH_SIZE）
-     * 2. 追加_CONFIG后缀形成常量名
-     * 3. 通过反射从指定配置类获取字段值
-     *
-     *
-     * @param yamlKey 配置键（如"acks"）
-     * @param configClass 配置类（ProducerConfig.class或ConsumerConfig.class）
-     * @param configType 配置类型描述（用于错误信息）
-     * @return Kafka标准配置键
-     * @throws IllegalArgumentException 当常量不存在时抛出
-     */
-    private static String getKafkaConstant(
-            String yamlKey,
-            Class<?> configClass,
-            String configType) {
-
-        // 格式转换规则：替换特殊字符并标准化命名
-        String constantName = yamlKey.toUpperCase()
-                .replace('.', '_')
-                .replace('-', '_')
-                + "_CONFIG";
-
-        try {
-            // 反射获取字段值
-            Field field = configClass.getDeclaredField(constantName);
-            return (String) field.get(null);
-        } catch (NoSuchFieldException e) {
-            // 构造详细错误信息
-            String errorMsg = String.format(
-                    "Invalid %s config key: '%s' (Attempted mapping: %s.%s)%n" +
-                            "Possible causes: 1. Typo in key 2. Unsupported in Kafka %s",
-                    configType, yamlKey, configClass.getSimpleName(), constantName,
-                    kafkaVersion()
-            );
-            throw new IllegalArgumentException(errorMsg);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Field access denied: " + constantName, e);
-        }
     }
 
     /**
      * 获取当前Kafka客户端版本（示例方法）
      */
     private static String kafkaVersion() {
+        // 成功连接集群后，利用 AdminClient API 获取实际版本
         return "3.9.1";  // 实际项目中应从依赖获取
     }
 }

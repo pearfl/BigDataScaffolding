@@ -1,0 +1,45 @@
+version: "1.0"          # 配置版本，便于追踪迭代
+author: "maxinhong"     # 作者信息
+description: "kafka properties"  # 配置描述
+env: "dev"               # 环境标识（dev/test/prod）
+kafka:                   # Kafka 配置根节点
+  mrs-kafka:             # 业务集群标识（支持多集群扩展）
+    server:              # 全局通用配置
+      bootstrap.servers: "ip:port"
+      security.protocol: SASL_PLAINTEXT
+      sasl.mechanism: GSSAPI
+      sasl.kerberos.service.name: kafka
+      kerberos.domain.name: hadoop.dlk.hidden.com.cn
+    topics:
+      scene-topic1:
+        producer:
+          acks: all
+          retries: 3
+          batch.size: 16384
+          linger.ms: 20
+          compression.type: lz4
+          enable.idempotence: true
+          transaction.timeout: 900000
+        consumer:
+          fetch.min.bytes: 1048576
+          max.partition.fetch.bytes: 2097152
+          fetch.max.wait.ms: 500
+          auto.offset.reset: latest
+          enable.auto.commit: false
+          isolation.level: read_committed
+      scene-topic2:
+        producer:
+          acks: all
+          retries: 3
+          batch.size: 16384
+          linger.ms: 20
+          compression.type: lz4
+          enable.idempotence: true
+          transaction.timeout: 900000
+        consumer:
+          fetch.min.bytes: 1048576
+          max.partition.fetch.bytes: 2097152
+          fetch.max.wait.ms: 500
+          auto.offset.reset: latest
+          enable.auto.commit: false
+          isolation.level: read_committed

@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.InputStream;
 import java.util.Map;
 import java.lang.reflect.Field;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,81 +22,6 @@ import org.slf4j.LoggerFactory;
 public class KafkaConfigLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConfigLoader.class);
-
-    private static String repeatString(String str, int count) {
-        if (str == null || count <= 0) return "";
-        StringBuilder sb = new StringBuilder(str.length() * count);
-        for (int i = 0; i < count; i++) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
-    public static void main(String[] args) {
-        try {
-            KafkaGlobalConfig globalConfig = loadConfig("kafka-config.yml");
-
-            // 全局配置日志输出
-            logger.info("===== GLOBAL CONFIG =====");
-            logger.info("Version: {}", globalConfig.getVersion());
-            logger.info("Author: {}", globalConfig.getAuthor());
-            logger.info("Description: {}", globalConfig.getDescription());
-            logger.info("Environment: {}", globalConfig.getEnv());
-            logger.info("================================\n");
-
-            for (String clusterId : globalConfig.getServerConfigs().keySet()) {
-                KafkaServerConfig serverConfig = globalConfig.getServerConfigById(clusterId);
-
-                // 集群配置日志输出
-                logger.info("===== CLUSTER CONFIG: {} =====", clusterId);
-                logger.info("Cluster ID: {}", serverConfig.getClusterId());
-
-                // 服务器配置日志输出
-                logger.info("\nSERVER CONFIGURATION:");
-                for (Map.Entry<String, Object> entry : serverConfig.getServerConfig().entrySet()) {
-                    int spaceCount = Math.max(0, 30 - entry.getKey().length());
-                    logger.info("  {}{} = {}",
-                            entry.getKey(),
-                            repeatString(" ", spaceCount),
-                            entry.getValue());
-                }
-
-                // 主题配置日志输出
-                logger.info("\nTOPIC CONFIGURATIONS:");
-                for (String topicName : serverConfig.getTopicConfigs().keySet()) {
-                    KafkaTopicConfig topic = serverConfig.getTopicConfig(topicName);
-
-                    logger.info("\n  --- TOPIC: {} ---", topicName);
-                    logger.info("  Actual Topic Name: {}", topic.getTopicName());
-
-                    // 生产者配置
-                    logger.info("\n  PRODUCER SETTINGS:");
-                    topic.getProducerProperties().forEach((key, value) -> {
-                        int keyLength = key.toString().length();
-                        int spaceCount = Math.max(0, 30 - keyLength);
-                        logger.info("    {}{} = {}",
-                                key,
-                                repeatString(" ", spaceCount),
-                                value);
-                    });
-
-                    // 消费者配置
-                    logger.info("\n  CONSUMER SETTINGS:");
-                    topic.getConsumerProperties().forEach((key, value) -> {
-                        int keyLength = key.toString().length();
-                        int spaceCount = Math.max(0, 30 - keyLength);
-                        logger.info("    {}{} = {}",
-                                key,
-                                repeatString(" ", spaceCount),
-                                value);
-                    });
-                }
-                logger.info("========================================\n");
-            }
-        } catch (Exception e) {
-            logger.error("FATAL ERROR: {}", e.getMessage(), e);
-        }
-    }
 
     /**
      * 加载并解析Kafka配置文件
@@ -140,64 +66,141 @@ public class KafkaConfigLoader {
     }
 
      /**
-      * 解析单个Kafka集群配置
-     *
-      * @param clusterId 集群标识符
-     * @param clusterConfig 集群配置数据
-     * @return 服务器配置对象
-     */
-    private static KafkaServerConfig parseServerConfig(
-            String clusterId, Map<String, Object> clusterConfig) {
+      * 解析集群级别配置并构建服务器配置对象
+      *
+      * 实现功能：
+      * 1. 加载基础连接配置（如 bootstrap.servers）
+      * 2. 加载集群级生产者/消费者默认配置
+      * 3. 构建主题配置并继承集群级默认值
+      *
+      * 配置继承机制：
+      *   集群级配置 → 主题级配置（后者可覆盖前者）
+      *
+      * 处理流程：
+      *   ┌───────────────────────┐
+      *   │ 1. 解析server基础配置   │
+      *   ├───────────────────────┤
+      *   │ 2. 解析producer配置    │→ serverProducerConfig
+      *   ├───────────────────────┤
+      *   │ 3. 解析consumer配置    │→ serverConsumerConfig
+      *   ├───────────────────────┤
+      *   │ 4. 获取配置副本        │（用于主题级配置继承）
+      *   ├───────────────────────┤
+      *   │ 5. 解析topics节点      │→ 注入集群级默认配置
+      *   └───────────────────────┘
+      *
+      * @param clusterId 集群唯一标识符（如：kafka-cluster-1）
+      * @param clusterConfig 集群配置数据（YAML解析后的Map结构）
+      * @return 完全初始化的KafkaServerConfig对象
+      * @see KafkaServerConfig#addServerConfig(String, Object) 基础配置添加方法
+      * @see KafkaServerConfig#addServerProducerConfig(String, Object) 生产者默认配置
+      */
+     private static KafkaServerConfig parseServerConfig(
+             String clusterId, Map<String, Object> clusterConfig) {
 
-        KafkaServerConfig serverConfig = new KafkaServerConfig()
-                .setClusterId(clusterId);
+         KafkaServerConfig serverConfig = new KafkaServerConfig().setClusterId(clusterId);
 
-        // 处理通用服务配置
-        Map<String, Object> serverProps = (Map) clusterConfig.get("server");
-        for (Map.Entry<String, Object> prop : serverProps.entrySet()) {
-            serverConfig.addServerConfig(prop.getKey(), prop.getValue());
-        }
+         // 1. 解析基础连接配置
+         Map<String, Object> serverProps = (Map) clusterConfig.get("server");
+         if (serverProps != null) {
+             serverProps.forEach(serverConfig::addServerConfig);
+         }
 
-        // 遍历所有主题配置
-        Map<String, Map<String, Object>> topics = (Map) clusterConfig.get("topics");
-        for (Map.Entry<String, Map<String, Object>> topicEntry : topics.entrySet()) {
-            KafkaTopicConfig topic = parseTopicConfig(
-                    topicEntry.getKey(),
-                    topicEntry.getValue()
-            );
-            serverConfig.addTopicConfig(topicEntry.getKey(), topic);
-        }
-        return serverConfig;
-    }
+         // 2. 解析集群级生产者配置
+         Map<String, Object> clusterProducerProps = (Map) clusterConfig.get("producer");
+         if (clusterProducerProps != null) {
+             clusterProducerProps.forEach((key, value) ->
+                     serverConfig.addServerProducerConfig((String) key, value)
+             );
+         }
+
+         // 3. 解析集群级消费者配置
+         Map<String, Object> clusterConsumerProps = (Map) clusterConfig.get("consumer");
+         if (clusterConsumerProps != null) {
+             clusterConsumerProps.forEach((key, value) ->
+                     serverConfig.addServerConsumerConfig((String) key, value)
+             );
+         }
+
+         // 4. 获取集群级配置副本（用于主题继承）
+         Properties serverProducerProps = serverConfig.getServerProducerConfig();
+         Properties serverConsumerProps = serverConfig.getServerConsumerConfig();
+
+         // 5. 解析主题配置（继承集群级默认值）
+         Map<String, Map<String, Object>> topics = (Map) clusterConfig.get("topics");
+         if (topics != null) {
+             topics.forEach((logicalName, topicConfig) -> {
+                 KafkaTopicConfig topic = parseTopicConfig(
+                         logicalName,
+                         topicConfig,
+                         serverProducerProps,
+                         serverConsumerProps
+                 );
+                 serverConfig.addTopicConfig(logicalName, topic);
+             });
+         }
+         return serverConfig;
+     }
 
     /**
-     * 解析主题级别配置
+     * 构建主题配置对象并实现配置继承
      *
-     * @param topicName 主题名称
-     * @param topicConfig 主题配置数据
-     * @return 主题配置对象
+     * 核心逻辑：
+     *   集群默认配置 + 主题覆盖配置 → 最终生效配置
+     *
+     * 配置合并优先级：
+     *   ┌──────────────────────────────┐
+     *   │ 主题级配置参数                 │ → 最高优先级（覆盖集群默认）
+     *   ├──────────────────────────────┤
+     *   │ 集群级默认配置                 │ → 基础值（可被主题覆盖）
+     *   └──────────────────────────────┘
+     *
+     * 特殊处理：
+     *   - 生产者配置：先注入集群级默认值，再合并主题级覆盖
+     *   - 消费者配置：同生产者合并逻辑
+     *   - 未显式配置的参数：保留集群级默认值
+     *
+     * @param logicalName 主题逻辑名称（如：order-events）
+     * @param topicConfig 主题专属配置数据
+     * @param defaultProducerProps 集群级生产者默认配置（不可变副本）
+     * @param defaultConsumerProps 集群级消费者默认配置（不可变副本）
+     * @return 合并后的主题配置对象
+     * @see KafkaTopicConfig#addProducerConfig(String, Object) 生产者配置合并
+     * @see KafkaTopicConfig#addConsumerConfig(String, Object) 消费者配置合并
+     *
+     * 示例：
+     *   集群配置：key.serializer = StringSerializer
+     *   主题配置：key.serializer = AvroSerializer
+     *   生效值：key.serializer = AvroSerializer
      */
     private static KafkaTopicConfig parseTopicConfig(
-            String topicName, Map<String, Object> topicConfig) {
+            String logicalName,
+            Map<String, Object> topicConfig,
+            Properties defaultProducerProps,
+            Properties defaultConsumerProps) {
 
-        KafkaTopicConfig topic = new KafkaTopicConfig()
-                .setTopicName(topicName);
+        KafkaTopicConfig topic = new KafkaTopicConfig().setTopicName(logicalName);
 
-        // 生产者配置验证与加载
-        Map<String, Object> producerProps = (Map) topicConfig.get("producer");
-        if (producerProps != null) {
-            for (Map.Entry<String, Object> prop : producerProps.entrySet()) {
-                topic.addProducerConfig(prop.getKey(), prop.getValue());
-            }
+        // 1. 合并生产者配置（集群默认值 + 主题覆盖）
+        defaultProducerProps.forEach((key, value) ->
+                topic.addProducerConfig((String) key, value)
+        );
+        Map<String, Object> topicProducerProps = (Map) topicConfig.get("producer");
+        if (topicProducerProps != null) {
+            topicProducerProps.forEach((key, value) ->
+                    topic.addProducerConfig((String) key, value)
+            );
         }
 
-
-        // 消费者配置验证与加载
-        Map<String, Object> consumerProps = (Map) topicConfig.get("consumer");
-        if (consumerProps != null) {
-            for (Map.Entry<String, Object> prop : consumerProps.entrySet()) {
-                topic.addConsumerConfig(prop.getKey(), prop.getValue());
-            }
+        // 2. 合并消费者配置（集群默认值 + 主题覆盖）
+        defaultConsumerProps.forEach((key, value) ->
+                topic.addConsumerConfig((String) key, value)
+        );
+        Map<String, Object> topicConsumerProps = (Map) topicConfig.get("consumer");
+        if (topicConsumerProps != null) {
+            topicConsumerProps.forEach((key, value) ->
+                    topic.addConsumerConfig((String) key, value)
+            );
         }
         return topic;
     }

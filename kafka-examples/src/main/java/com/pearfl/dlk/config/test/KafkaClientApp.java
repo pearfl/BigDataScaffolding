@@ -1,5 +1,9 @@
-package com.pearfl.dlk.config;
+package com.pearfl.dlk.config.test;
 
+import com.pearfl.dlk.config.KafkaConfigLoader;
+import com.pearfl.dlk.config.KafkaGlobalConfig;
+import com.pearfl.dlk.config.KafkaServerConfig;
+import com.pearfl.dlk.config.KafkaTopicConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;

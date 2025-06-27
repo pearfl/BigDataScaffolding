@@ -10,8 +10,10 @@ kafka:                   # Kafka 配置根节点
       sasl.mechanism: GSSAPI
       sasl.kerberos.service.name: kafka
       kerberos.domain.name: hadoop.dlk.hidden.com.cn
+    producer:
       key.serializer: org.apache.kafka.common.serialization.StringSerializer
       value.serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
     topics:

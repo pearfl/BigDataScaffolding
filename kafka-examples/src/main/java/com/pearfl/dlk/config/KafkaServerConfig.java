@@ -17,11 +17,11 @@ public class KafkaServerConfig {
 
     // 集群级生产者配置（原名producerDefaults）
     @Getter(AccessLevel.NONE)
-    private final Properties serverProducerConfig = new Properties();
+    private final  Map<String, Object> serverProducerConfig = new HashMap<>();
 
     // 集群级消费者配置（原名consumerDefaults）
     @Getter(AccessLevel.NONE)
-    private final Properties serverConsumerConfig = new Properties();
+    private final  Map<String, Object> serverConsumerConfig = new HashMap<>();
 
     // 主题配置（逻辑名 → 配置对象）
     @Getter(AccessLevel.NONE)
@@ -34,13 +34,13 @@ public class KafkaServerConfig {
     }
 
     /** 获取集群级生产者配置（副本） */
-    public Properties getServerProducerConfig() {
-        return new Properties(serverProducerConfig); // 返回副本防篡改
+    public Map<String, Object> getServerProducerConfig() {
+        return Collections.unmodifiableMap(serverProducerConfig); // 返回副本防篡改
     }
 
     /** 获取集群级消费者配置（副本） */
-    public Properties getServerConsumerConfig() {
-        return new Properties(serverConsumerConfig);
+    public Map<String, Object> getServerConsumerConfig() {
+        return Collections.unmodifiableMap(serverConsumerConfig);
     }
 
     /** 获取所有主题配置（不可修改视图） */

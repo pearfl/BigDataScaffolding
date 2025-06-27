@@ -2,8 +2,6 @@ package com.pearfl.dlk.config.test;
 
 import com.pearfl.dlk.config.KafkaConfigLoader;
 import com.pearfl.dlk.config.KafkaGlobalConfig;
-import com.pearfl.dlk.config.KafkaServerConfig;
-import com.pearfl.dlk.config.KafkaTopicConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +11,7 @@ import java.util.stream.Stream;
 
 import static com.pearfl.dlk.config.KafkaConfigLoader.loadConfig;
 
-public class Test {
+public class KafkaConfigOutput {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConfigLoader.class);
 
@@ -60,8 +58,8 @@ public class Test {
                 // 使用函数式处理三类配置
                 Map<String, Map<String, Object>> configGroups = new LinkedHashMap<>();
                 configGroups.put("SERVER CONFIGURATION", serverConfig.getServerConfig());
-                configGroups.put("SERVER PRODUCER CONFIGURATION", toMap(serverConfig.getServerProducerConfig()));
-                configGroups.put("SERVER CONSUMER CONFIGURATION", toMap(serverConfig.getServerConsumerConfig()));
+                configGroups.put("SERVER PRODUCER CONFIGURATION", serverConfig.getServerProducerConfig());
+                configGroups.put("SERVER CONSUMER CONFIGURATION", serverConfig.getServerConsumerConfig());
 
                 configGroups.forEach((name, config) ->
                         logKeyValueConfig(name, config, 0)

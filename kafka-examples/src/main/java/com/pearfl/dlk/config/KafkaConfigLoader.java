@@ -123,8 +123,8 @@ public class KafkaConfigLoader {
          }
 
          // 4. 获取集群级配置副本（用于主题继承）
-         Properties serverProducerProps = serverConfig.getServerProducerConfig();
-         Properties serverConsumerProps = serverConfig.getServerConsumerConfig();
+         Map<String, Object> serverProducerProps = serverConfig.getServerProducerConfig();
+         Map<String, Object> serverConsumerProps = serverConfig.getServerConsumerConfig();
 
          // 5. 解析主题配置（继承集群级默认值）
          Map<String, Map<String, Object>> topics = (Map) clusterConfig.get("topics");
@@ -176,8 +176,8 @@ public class KafkaConfigLoader {
     private static KafkaTopicConfig parseTopicConfig(
             String logicalName,
             Map<String, Object> topicConfig,
-            Properties defaultProducerProps,
-            Properties defaultConsumerProps) {
+            Map<String, Object> defaultProducerProps,
+            Map<String, Object> defaultConsumerProps) {
 
         KafkaTopicConfig topic = new KafkaTopicConfig().setTopicName(logicalName);
 

@@ -19,46 +19,39 @@ public class KafkaGlobalConfig {
     private String description;
     private String env;
 
-    // 基础存储（初始化后只读）
-    @Getter(AccessLevel.NONE)
+    // 集群ID到集群配置的映射
     private final Map<String, KafkaServerConfig> servers = new HashMap<>();
 
-    // 快速索引（线程安全）
-    private final Map<String, KafkaServerConfig> serverConfigMap = new ConcurrentHashMap<>();
-    private final Map<String, KafkaTopicConfig> topicConfigMap = new ConcurrentHashMap<>();
+    // 主题配置的快速索引：key为clusterId和topicName的组合，value为主题配置
+    private final Map<String, KafkaTopicConfig> topicConfigMap = new HashMap<>();
 
-    //============== 核心方法 ==============
     /**
-     * 安全添加集群配置（自动同步索引）
+     * 添加集群配置，同时建立主题配置的快速索引
      */
     public KafkaGlobalConfig addServerConfig(String clusterId, KafkaServerConfig config) {
         servers.put(clusterId, config);
-        serverConfigMap.put(clusterId, config);
+        // 将该集群下的所有主题配置添加到全局主题配置映射中
         config.getTopicConfigs().forEach((topicName, topicConfig) -> {
             topicConfigMap.put(generateCombinedKey(clusterId, topicName), topicConfig);
         });
         return this;
     }
 
-    /**
-     * 生成主题配置组合键（线程安全分隔符）
-     */
-    public String generateCombinedKey(String clusterId, String topicName) {
-        return clusterId + "|" + topicName; // Kafka主题名禁用'|'字符[3](@ref)
+    private String generateCombinedKey(String clusterId, String topicName) {
+        return clusterId + "|" + topicName;
     }
 
-    //============== 查询接口 ==============
-    /** 获取所有集群（不可修改视图） */
+    // 获取所有集群配置（不可修改视图）
     public Map<String, KafkaServerConfig> getServerConfigs() {
         return Collections.unmodifiableMap(servers);
     }
 
-    /** 按集群ID获取配置（O(1)查询） */
+    // 按集群ID获取集群配置
     public KafkaServerConfig getServerConfigById(String clusterId) {
-        return serverConfigMap.get(clusterId);
+        return servers.get(clusterId);
     }
 
-    /** 按集群+主题获取配置（O(1)查询） */
+    // 按集群ID和主题名获取主题配置
     public KafkaTopicConfig getTopicConfigByIds(String clusterId, String topicName) {
         return topicConfigMap.get(generateCombinedKey(clusterId, topicName));
     }

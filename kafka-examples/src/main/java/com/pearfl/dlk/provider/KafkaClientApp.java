@@ -1,4 +1,4 @@
-package com.pearfl.dlk.config.test;
+package com.pearfl.dlk.provider;
 
 import com.pearfl.dlk.config.KafkaConfigLoader;
 import com.pearfl.dlk.config.KafkaGlobalConfig;

@@ -19,6 +19,8 @@ kafka:                   # Kafka 配置根节点
       key.serializer: "org.apache.kafka.common.serialization.StringSerializer"
       value.serializer: "org.apache.kafka.common.serialization.StringSerializer"
     consumer:
+      auto.commit.interval.ms: "1000"
+      session.timeout.ms: "30000"
       fetch.min.bytes: "1048576"
       max.partition.fetch.bytes: "2097152"
       fetch.max.wait.ms: "500"
@@ -30,7 +32,11 @@ kafka:                   # Kafka 配置根节点
     topics:
       scene-topic1:
         producer:
+          client.id: "client.id1"
         consumer:
+          group.id: "group.id1"
       scene-topic2:
         producer:
+          client.id: "client.id2"
         consumer:
+          group.id: "group.id2"

@@ -10,6 +10,13 @@ kafka:                   # Kafka 配置根节点
       sasl.mechanism: "GSSAPI"
       sasl.kerberos.service.name: "kafka"
       kerberos.domain.name: "hadoop.dlk.hidden.com.cn"
+      sasl.jaas.config: >-
+        com.sun.security.auth.module.Krb5LoginModule required
+        useKeyTab=true
+        keyTab="kafka-client.keytab"
+        storeKey=true
+        useTicketCache=false
+        principal="kafka-client@HADOOP.DLK.HIDDEN.COM.CN"
     producer:
       batch.size: "16384"
       linger.ms: "20"

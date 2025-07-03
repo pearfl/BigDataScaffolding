@@ -50,6 +50,8 @@ public class KafkaConfigLoader {
             Map<String, Object> root = yaml.load(inputStream);
             KafkaGlobalConfig globalConfig = new KafkaGlobalConfig()
                     .setVersion((String) root.get("version"))
+                    .setAuthor((String) root.get("author"))
+                    .setDescription((String) root.get("description"))
                     .setEnv((String) root.get("env"));
 
             // 解析所有集群配置

@@ -1,12 +1,10 @@
 package com.pearfl.dlk.config;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @Setter

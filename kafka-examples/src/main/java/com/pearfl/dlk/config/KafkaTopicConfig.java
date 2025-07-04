@@ -1,7 +1,6 @@
 package com.pearfl.dlk.config;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

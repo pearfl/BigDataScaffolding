@@ -1,14 +1,8 @@
 package com.pearfl.dlk.config;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.yaml.snakeyaml.Yaml;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.lang.reflect.Field;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

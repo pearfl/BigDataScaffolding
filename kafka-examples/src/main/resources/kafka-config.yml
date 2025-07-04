@@ -37,13 +37,13 @@ kafka:                   # Kafka 配置根节点
       key.deserializer: "org.apache.kafka.common.serialization.StringDeserializer"
       value.deserializer: "org.apache.kafka.common.serialization.StringDeserializer"
     topics:
-      scene-topic1:
+      DLK_TEST_TOPIC_MXH_01_DEV:
         producer:
-          client.id: "client.id1"
+          client.id: "TEST_CLIENT_MXH_01"
         consumer:
-          group.id: "group.id1"
-      scene-topic2:
+          group.id: "TEST_GROUP_MXH_01"
+      DLK_TEST_TOPIC_MXH_02_DEV:
         producer:
-          client.id: "client.id2"
+          client.id: "TEST_CLIENT_MXH_01"
         consumer:
-          group.id: "group.id2"
+          group.id: "TEST_GROUP_MXH_01"

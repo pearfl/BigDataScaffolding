@@ -21,7 +21,7 @@ kafka:                   # Kafka 配置根节点
       batch.size: "16384"
       linger.ms: "20"
       compression.type: "lz4"
-      enable.idempotence: "true"
+#      enable.idempotence: "true"
       transaction.timeout.ms: "900000"
       key.serializer: "org.apache.kafka.common.serialization.StringSerializer"
       value.serializer: "org.apache.kafka.common.serialization.StringSerializer"

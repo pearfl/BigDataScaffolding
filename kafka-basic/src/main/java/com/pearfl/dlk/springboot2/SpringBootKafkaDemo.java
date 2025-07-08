@@ -10,21 +10,12 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
-/**
- * Spring Boot 2.7.18 + Kafka ≥ 2.7 完整集成示例
- * 功能亮点：
- *  - 使用CompletableFuture异步发送[2,6](@ref)
- *  - JSON消息序列化支持
- *  - 手动提交偏移量配置
- *  - 异常处理机制
- *  - REST API消息发送接口
- */
 @SpringBootApplication
 public class SpringBootKafkaDemo {
 
@@ -51,46 +42,32 @@ public class SpringBootKafkaDemo {
         };
     }
 
-    /**
-     * Kafka生产者服务
-     */
     @Service
     public static class KafkaProducerService {
         @Autowired
         private KafkaTemplate<String, Object> kafkaTemplate;
 
-        /**
-         * 发送JSON消息（异步+回调）
-         * @param topic 目标主题
-         * @param message 消息内容
-         */
         public void sendJsonMessage(String topic, Object message) {
-            CompletableFuture<SendResult<String, Object>> future =
+            ListenableFuture<SendResult<String, Object>> future =
                     kafkaTemplate.send(topic, message);
 
-            future.whenComplete((result, ex) -> {
-                if (ex == null) {
-                    System.out.printf("[Producer] ✅ 发送成功! 主题:%s 分区:%d 偏移量:%d%n",
-                            result.getRecordMetadata().topic(),
-                            result.getRecordMetadata().partition(),
-                            result.getRecordMetadata().offset());
-                } else {
-                    System.err.printf("[Producer] ❌ 发送失败: %s%n", ex.getMessage());
-                    // 生产环境建议添加重试逻辑
-                }
-            });
+            future.addCallback(
+                    // 成功回调
+                    result -> {
+                        assert result != null;
+                        System.out.printf("[Producer] ✅ 发送成功! 主题:%s 分区:%d 偏移量:%d%n",
+                                result.getRecordMetadata().topic(),
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    },
+                    // 失败回调
+                    ex -> System.err.printf("[Producer] ❌ 发送失败: %s%n", ex.getMessage())
+            );
         }
     }
 
-    /**
-     * Kafka消费者服务
-     */
     @Service
     public static class KafkaConsumerService {
-        /**
-         * 监听指定主题的消息[4,5](@ref)
-         * @param record 消息记录
-         */
         @KafkaListener(topics = TOPIC, groupId = "springboot-consumer-group")
         public void consume(ConsumerRecord<String, Map<String, Object>> record) {
             try {
@@ -114,9 +91,6 @@ public class SpringBootKafkaDemo {
         }
     }
 
-    /**
-     * REST消息发送接口
-     */
     @RestController
     @RequestMapping("/kafka")
     public static class KafkaController {

@@ -5,6 +5,8 @@ import lombok.experimental.Accessors;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -37,6 +39,22 @@ public class KafkaTopicConfig {
     /** 获取类型安全的ConsumerConfig实例 */
     public ConsumerConfig getConsumerConfig() {
         return new ConsumerConfig(consumerProperties);
+    }
+
+    public Map<String, Object> getConsumerPropertiesAsMap() {
+        return propertiesToMap(consumerProperties);
+    }
+
+    public Map<String, Object> getProducerPropertiesAsMap() {
+        return propertiesToMap(producerProperties);
+    }
+
+    private Map<String, Object> propertiesToMap(Properties props) {
+        Map<String, Object> map = new HashMap<>();
+        for (String key : props.stringPropertyNames()) {
+            map.put(key, props.getProperty(key));
+        }
+        return map;
     }
 
     /** 配置键有效性验证 */

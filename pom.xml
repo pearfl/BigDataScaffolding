@@ -11,6 +11,7 @@
         <module>kafka-basic</module>
         <module>run-tests</module>
         <module>flume-basic</module>
+        <module>flink-basic</module>
     </modules>
 
     <properties>

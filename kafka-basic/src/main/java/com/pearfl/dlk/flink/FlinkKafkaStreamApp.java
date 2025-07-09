@@ -40,7 +40,7 @@ public class FlinkKafkaStreamApp {
         KafkaGlobalConfig config = KafkaConfigLoader.loadConfig("kafka-config.yml");
         String clusterId = "mrs-kafka";
         String topicName = "DLK_TEST_TOPIC_MXH_01_DEV";
-        String groupId = config.getTopicConfigByIds(clusterId, topicName).getConsumerProperties().getProperty("group.id");
+        String groupId = config.getTopicConfigByClusterIdAndTopicName(clusterId, topicName).getConsumerProperties().getProperty("group.id");
 
         // 1. 初始化Flink环境（启用Checkpoint）
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -113,7 +113,7 @@ public class FlinkKafkaStreamApp {
         // 获取集群配置
         KafkaServerConfig cluster = config.getServerConfigById(clusterId);
         // 获取主题配置
-        KafkaTopicConfig topic = cluster.getTopicConfigs().get(topicName);
+        KafkaTopicConfig topic = cluster.getTopicsConfig().get(topicName);
 
         // 合并配置（集群+主题）
         Properties props = mergeConfigs(cluster, topic, true);
@@ -149,7 +149,7 @@ public class FlinkKafkaStreamApp {
         // 获取集群配置
         KafkaServerConfig cluster = config.getServerConfigById(clusterId);
         // 获取主题配置
-        KafkaTopicConfig topic = cluster.getTopicConfigs().get(topicName);
+        KafkaTopicConfig topic = cluster.getTopicsConfig().get(topicName);
         // 合并配置（集群+主题）
         Properties props = mergeConfigs(cluster, topic, false);
 

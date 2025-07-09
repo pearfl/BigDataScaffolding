@@ -69,7 +69,7 @@ public class KafkaClientApp {
                                         String topicName, Object messageObject) {
         // 获取指定集群和主题的配置
         KafkaServerConfig cluster = config.getServerConfigById(clusterId);
-        KafkaTopicConfig topic = config.getTopicConfigByIds(clusterId, topicName);
+        KafkaTopicConfig topic = config.getTopicConfigByClusterIdAndTopicName(clusterId, topicName);
 
         // 合并配置：集群基础配置 + 集群级生产者配置 + 主题级生产者配置
         Properties producerProps = new Properties();
@@ -118,7 +118,7 @@ public class KafkaClientApp {
     private static void consumeJsonFromTopic(KafkaGlobalConfig config, String clusterId, String topicName) {
         // 获取指定集群和主题的配置
         KafkaServerConfig cluster = config.getServerConfigById(clusterId);
-        KafkaTopicConfig topic = config.getTopicConfigByIds(clusterId, topicName);
+        KafkaTopicConfig topic = config.getTopicConfigByClusterIdAndTopicName(clusterId, topicName);
 
         // 合并消费者配置
         Properties consumerProps = new Properties();

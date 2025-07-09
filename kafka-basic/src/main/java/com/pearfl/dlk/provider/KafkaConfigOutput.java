@@ -67,7 +67,7 @@ public class KafkaConfigOutput {
 
                 // 主题配置处理
                 logger.info("\nTOPIC CONFIGURATIONS:");
-                serverConfig.getTopicConfigs().forEach((topicName, topic) -> {
+                serverConfig.getTopicsConfig().forEach((topicName, topic) -> {
                     logger.info("\n  --- TOPIC: {} ---", topicName);
                     logger.info("  Actual Topic Name: {}", topic.getTopicName());
 

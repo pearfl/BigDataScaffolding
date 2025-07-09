@@ -1,4 +1,4 @@
-version: "1.0"          # 配置版本，便于追踪迭代
+version: "1.0.0"          # 配置版本，便于追踪迭代
 author: "maxinhong"     # 作者信息
 description: "kafka properties"  # 配置描述
 env: "dev"               # 环境标识（dev/test/prod）
@@ -21,7 +21,7 @@ kafka:                   # Kafka 配置根节点
       batch.size: "16384"
       linger.ms: "20"
       compression.type: "lz4"
-#      enable.idempotence: "true"
+      enable.idempotence: "true"
       transaction.timeout.ms: "900000"
       key.serializer: "org.apache.kafka.common.serialization.StringSerializer"
       value.serializer: "org.apache.kafka.common.serialization.StringSerializer"

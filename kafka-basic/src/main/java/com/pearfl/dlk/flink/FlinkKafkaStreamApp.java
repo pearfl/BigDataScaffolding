@@ -40,6 +40,7 @@ public class FlinkKafkaStreamApp {
         KafkaGlobalConfig config = KafkaConfigLoader.loadConfig("kafka-config.yml");
         String clusterId = "mrs-kafka";
         String topicName = "DLK_TEST_TOPIC_MXH_01_DEV";
+        String groupId = config.getTopicConfigByIds(clusterId, topicName).getConsumerProperties().getProperty("group.id");
 
         // 1. 初始化Flink环境（启用Checkpoint）
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -47,7 +48,7 @@ public class FlinkKafkaStreamApp {
 
         // 2. 创建Kafka数据源
         DataStream<String> kafkaSource = env.fromSource(
-                createKafkaSource(config, clusterId, topicName),
+                createKafkaSource(config, clusterId, topicName, groupId),
                 WatermarkStrategy.noWatermarks(),
                 "Kafka Source"
         );
@@ -107,7 +108,7 @@ public class FlinkKafkaStreamApp {
      * @return KafkaSource实例
      */
     private static KafkaSource<String> createKafkaSource(
-            KafkaGlobalConfig config, String clusterId, String topicName
+            KafkaGlobalConfig config, String clusterId, String topicName, String groupId
     ) {
         // 获取集群配置
         KafkaServerConfig cluster = config.getServerConfigById(clusterId);
@@ -125,7 +126,7 @@ public class FlinkKafkaStreamApp {
                 // 设置消费主题
                 .setTopics(topicName)
                 // 设置消费组ID
-                .setGroupId("flink-consumer-group")
+                .setGroupId(groupId)
                 // 使用SimpleStringSchema进行反序列化
                 .setDeserializer(KafkaRecordDeserializationSchema.valueOnly(new SimpleStringSchema()))
                 // 从最早偏移量开始

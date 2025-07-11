@@ -105,6 +105,7 @@ public class FlinkKafkaStreamApp {
      * @param config Kafka全局配置
      * @param clusterId 集群ID
      * @param topicName 主题名称
+     * @param groupId 消费者组ID
      * @return KafkaSource实例
      */
     private static KafkaSource<String> createKafkaSource(

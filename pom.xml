@@ -11,6 +11,7 @@
         <module>kafka-basic</module>
         <module>flume-basic</module>
         <module>flink-basic</module>
+        <module>yarn-basic</module>
     </modules>
 
     <properties>

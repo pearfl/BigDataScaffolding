@@ -53,7 +53,7 @@ safe_mkdir() {
 
 # 路径安全验证 - 防御路径遍历攻击和越权访问
 validate_path_safe() {
-    local path="$1" allowed_root="$2"
+    local path="$1" allowed_root="${2:-}"
     
     # 注入攻击特征检测
     [[ "$path" =~ (\.\./|/\.\.|//|/\./) ]] && {
